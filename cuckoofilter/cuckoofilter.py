@@ -1,5 +1,6 @@
-import hashlib
 import bitstring
+import hashlib
+import random
 
 
 class CuckooFilter:
@@ -12,7 +13,7 @@ class CuckooFilter:
         Fan, B., Andersen, D. G., Kaminsky, M., & Mitzenmacher, M. D. (2014, December).
         Cuckoo filter: Practically better than bloom.
         In Proceedings of the 10th ACM International on Conference on emerging Networking Experiments and Technologies (pp. 75-88). ACM.
-    
+
     Their reference implementation in C++ can be found here: https://github.com/efficient/cuckoofilter
     '''
 
@@ -37,7 +38,7 @@ class CuckooFilter:
         self.bits_per_fingerprint = bits_per_fingerprint
         self.bucket_size = bucket_size
         self.max_kicks = max_kicks
-        self.buckets = []
+        self.buckets = [[] for _ in range(self.capacity)]
 
     def insert(self, item):
         '''
@@ -45,12 +46,46 @@ class CuckooFilter:
 
         Throws an exception if the insertion fails.
         '''
+        fingerprint = self.fingerprint(item, self.bits_per_fingerprint)
+        i1 = self.index_hash(item)
+        i2 = self.index_hash(i1 ^ self.index_hash(fingerprint))
+
+        if len(self.buckets[i1]) < self.bucket_size:
+            self.buckets[i1].append(fingerprint)
+            return i1
+        elif len(self.buckets[i2]) < self.bucket_size:
+            self.buckets[i2].append(fingerprint)
+            return i2
+
+        i = random.choice((i1, i2))
+        for kick_count in range(self.max_kicks):
+            bucket = self.buckets[i]
+            bucket_index, new_fingerprint = random.choice(list(enumerate(bucket)))
+            bucket[bucket_index] = fingerprint
+            fingerprint = new_fingerprint
+            i = i ^ self.index_hash(fingerprint)
+            if len(self.buckets[i]) < self.bucket_size:
+                self.buckets[i].append(fingerprint)
+                return i
+
+        return Exception('Filter is full')
 
     def contains(self, item):
         '''Checks if an integer was inserted into the filter.'''
+        fingerprint = self.fingerprint(item, self.bits_per_fingerprint)
+        i1 = self.index_hash(item)
+        i2 = self.index_hash(i1 ^ self.index_hash(fingerprint))
+        return (fingerprint in self.buckets[i1]) or (fingerprint in self.buckets[i2])
+
+    def __contains__(self, item):
+        return self.contains(item)
 
     def delete(self, item):
         '''Removes an integer from the filter.'''
+
+    def index_hash(self, item):
+        '''Calculate the (first) index of an item in the filter.'''
+        return int(hashlib.md5(bytes(item)).hexdigest(), 16) % self.capacity
 
     @staticmethod
     def fingerprint(item, fingerprint_size):
@@ -58,9 +93,9 @@ class CuckooFilter:
         Takes an integer and returns its fingerprint in bits.
 
         The length of the fingerprint is given by fingerprint_size.
-        To calculate this fingerprint, we hash the integer with sha1 and truncate the hash.
+        To calculate this fingerprint, we hash the integer with md5 and truncate the hash.
         '''
-        hash_object = hashlib.sha1(bytes(item))
+        hash_object = hashlib.md5(bytes(item))
         bits = bitstring.Bits(hash_object.digest())
         bits = bits[:fingerprint_size]
         return bits
