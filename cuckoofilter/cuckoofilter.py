@@ -39,6 +39,7 @@ class CuckooFilter:
         self.bucket_size = bucket_size
         self.max_kicks = max_kicks
         self.buckets = [[] for _ in range(self.capacity)]
+        self.size = 0
 
     def insert(self, item):
         '''
@@ -62,12 +63,13 @@ class CuckooFilter:
             bucket_index, new_fingerprint = random.choice(list(enumerate(bucket)))
             bucket[bucket_index] = fingerprint
             fingerprint = new_fingerprint
-            i = i ^ self.index_hash(fingerprint.tobytes())
+            i = (i ^ self.index_hash(fingerprint.tobytes())) % self.capacity
             if len(self.buckets[i]) < self.bucket_size:
                 self.buckets[i].append(fingerprint)
+                self.size = self.size + 1
                 return i
 
-        return Exception('Filter is full')
+        raise Exception('Filter is full')
 
     def contains(self, item):
         '''Checks if a string was inserted into the filter.'''
