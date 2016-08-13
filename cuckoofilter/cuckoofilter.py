@@ -1,5 +1,5 @@
 import bitstring
-import hashlib
+import mmh3
 import random
 
 
@@ -42,13 +42,12 @@ class CuckooFilter:
 
     def insert(self, item):
         '''
-        Inserts an integer into the filter.
+        Inserts a string into the filter.
 
         Throws an exception if the insertion fails.
         '''
         fingerprint = self.fingerprint(item, self.bits_per_fingerprint)
-        i1 = self.index_hash(item)
-        i2 = self.index_hash(i1 ^ self.index_hash(fingerprint))
+        i1, i2 = self.calculate_index_pair(item)
 
         if len(self.buckets[i1]) < self.bucket_size:
             self.buckets[i1].append(fingerprint)
@@ -63,7 +62,7 @@ class CuckooFilter:
             bucket_index, new_fingerprint = random.choice(list(enumerate(bucket)))
             bucket[bucket_index] = fingerprint
             fingerprint = new_fingerprint
-            i = i ^ self.index_hash(fingerprint)
+            i = i ^ self.index_hash(fingerprint.tobytes())
             if len(self.buckets[i]) < self.bucket_size:
                 self.buckets[i].append(fingerprint)
                 return i
@@ -71,31 +70,39 @@ class CuckooFilter:
         return Exception('Filter is full')
 
     def contains(self, item):
-        '''Checks if an integer was inserted into the filter.'''
+        '''Checks if a string was inserted into the filter.'''
         fingerprint = self.fingerprint(item, self.bits_per_fingerprint)
-        i1 = self.index_hash(item)
-        i2 = self.index_hash(i1 ^ self.index_hash(fingerprint))
+        i1, i2 = self.calculate_index_pair(item)
         return (fingerprint in self.buckets[i1]) or (fingerprint in self.buckets[i2])
 
     def __contains__(self, item):
         return self.contains(item)
 
     def delete(self, item):
-        '''Removes an integer from the filter.'''
+        '''Removes a string from the filter.'''
 
     def index_hash(self, item):
         '''Calculate the (first) index of an item in the filter.'''
-        return int(hashlib.md5(bytes(item)).hexdigest(), 16) % self.capacity
+        item_hash = mmh3.hash_bytes(item)
+        index = int.from_bytes(item_hash, byteorder='big') % self.capacity
+        return index
+    
+    def calculate_index_pair(self, item):
+        '''Calculate both possible indices for the item'''
+        fingerprint = self.fingerprint(item, self.bits_per_fingerprint)
+        i1 = self.index_hash(item)
+        i2 = i1 ^ self.index_hash(fingerprint.tobytes())
+        return i1, i2
 
     @staticmethod
     def fingerprint(item, fingerprint_size):
         '''
-        Takes an integer and returns its fingerprint in bits.
+        Takes a string and returns its fingerprint in bits.
 
         The length of the fingerprint is given by fingerprint_size.
-        To calculate this fingerprint, we hash the integer with md5 and truncate the hash.
+        To calculate this fingerprint, we hash the string with MurmurHash3 and truncate the hash.
         '''
-        hash_object = hashlib.md5(bytes(item))
-        bits = bitstring.Bits(hash_object.digest())
+        item_hash = mmh3.hash_bytes(item)
+        bits = bitstring.Bits(item_hash)
         bits = bits[:fingerprint_size]
         return bits
