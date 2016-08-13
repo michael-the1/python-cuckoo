@@ -91,7 +91,7 @@ class CuckooFilter:
         '''Calculate both possible indices for the item'''
         fingerprint = self.fingerprint(item, self.bits_per_fingerprint)
         i1 = self.index_hash(item)
-        i2 = i1 ^ self.index_hash(fingerprint.tobytes())
+        i2 = (i1 ^ self.index_hash(fingerprint.tobytes())) % self.capacity
         return i1, i2
 
     @staticmethod
