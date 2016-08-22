@@ -48,6 +48,7 @@ class CuckooFilter:
 
         Throws an exception if the insertion fails.
         '''
+        self.size = self.size + 1
         fingerprint = self.fingerprint(item)
         i1, i2 = self.calculate_index_pair(item, fingerprint)
 
@@ -62,9 +63,9 @@ class CuckooFilter:
             i = (i ^ self.index_hash(fingerprint.tobytes())) % self.capacity
 
             if self.buckets[i].insert(fingerprint):
-                self.size = self.size + 1
                 return i
-
+        
+        self.size = self.size - 1
         raise Exception('Filter is full')
 
     def contains(self, item):
@@ -77,8 +78,8 @@ class CuckooFilter:
         '''Removes a string from the filter.'''
         fingerprint = self.fingerprint(item)
         i1, i2 = self.calculate_index_pair(item, fingerprint)
-        self.buckets[i1].delete(fingerprint)
-        self.buckets[i2].delete(fingerprint)
+        if self.buckets[i1].delete(fingerprint) or self.buckets[i2].delete(fingerprint):
+            self.size = self.size - 1
 
     def index_hash(self, item):
         '''Calculate the (first) index of an item in the filter.'''
