@@ -32,3 +32,6 @@ class Bucket:
 
     def __contains__(self, fingerprint):
         return self.contains(fingerprint)
+
+    def __repr__(self):
+        return '<Bucket: ' + str(self.b) + '>'

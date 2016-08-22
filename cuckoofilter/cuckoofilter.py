@@ -108,3 +108,6 @@ class CuckooFilter:
 
     def __contains__(self, item):
         return self.contains(item)
+
+    def __repr__(self):
+        return '<CuckooFilter: capacity=' + str(self.capacity) + ', fingerprint size=' + str(self.bits_per_fingerprint) + ' bits>'
