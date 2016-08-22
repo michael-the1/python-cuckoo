@@ -116,3 +116,6 @@ class CuckooFilter:
 
     def __repr__(self):
         return '<CuckooFilter: capacity=' + str(self.capacity) + ', fingerprint size=' + str(self.bits_per_fingerprint) + ' bits>'
+
+    def __sizeof__(self):
+        return super().__sizeof__() + sum(b.__sizeof__() for b in self.buckets)
