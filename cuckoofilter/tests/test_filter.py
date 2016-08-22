@@ -18,6 +18,8 @@ class TestCuckooFilter(unittest.TestCase):
         self.cf.insert('hello')
         self.cf.delete('hello')
         self.assertFalse(self.cf.contains('hello'), 'Inserted key was not deleted.')
+        self.assertEqual(self.cf.size, 0, 'Size was not properly kept track of')
+
 
 if __name__ == '__main__':
     unittest.main()

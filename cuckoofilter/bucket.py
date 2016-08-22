@@ -19,8 +19,9 @@ class Bucket:
     def delete(self, fingerprint):
         try:
             del self.b[self.b.index(fingerprint)]
+            return True
         except ValueError:
-            pass
+            return False
 
     def swap(self, fingerprint):
         bucket_index = random.choice(range(len(self.b)))
