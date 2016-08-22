@@ -41,6 +41,7 @@ class CuckooFilter:
         self.max_kicks = max_kicks
         self.buckets = [bucket.Bucket(size=bucket_size) for _ in range(self.capacity)]
         self.size = 0
+        self.bucket_size = bucket_size
 
     def insert(self, item):
         '''
@@ -64,7 +65,7 @@ class CuckooFilter:
 
             if self.buckets[i].insert(fingerprint):
                 return i
-        
+
         self.size = self.size - 1
         raise Exception('Filter is full')
 
@@ -106,6 +107,9 @@ class CuckooFilter:
         bits = bitstring.Bits(item_hash)
         bits = bits[:self.bits_per_fingerprint]
         return bits
+
+    def load_factor(self):
+        return self.size / (len(self.buckets) * self.bucket_size)
 
     def __contains__(self, item):
         return self.contains(item)
