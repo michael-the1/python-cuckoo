@@ -49,7 +49,7 @@ class CuckooFilter:
         Throws an exception if the insertion fails.
         '''
         fingerprint = self.fingerprint(item)
-        i1, i2 = self.calculate_index_pair(item)
+        i1, i2 = self.calculate_index_pair(item, fingerprint)
 
         if self.buckets[i1].insert(fingerprint):
             return i1
@@ -70,7 +70,7 @@ class CuckooFilter:
     def contains(self, item):
         '''Checks if a string was inserted into the filter.'''
         fingerprint = self.fingerprint(item)
-        i1, i2 = self.calculate_index_pair(item)
+        i1, i2 = self.calculate_index_pair(item, fingerprint)
         return (fingerprint in self.buckets[i1]) or (fingerprint in self.buckets[i2])
 
     def delete(self, item):
