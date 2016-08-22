@@ -75,6 +75,10 @@ class CuckooFilter:
 
     def delete(self, item):
         '''Removes a string from the filter.'''
+        fingerprint = self.fingerprint(item)
+        i1, i2 = self.calculate_index_pair(item, fingerprint)
+        self.buckets[i1].delete(fingerprint)
+        self.buckets[i2].delete(fingerprint)
 
     def index_hash(self, item):
         '''Calculate the (first) index of an item in the filter.'''
