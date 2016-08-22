@@ -8,7 +8,7 @@ class TestCuckooFilter(unittest.TestCase):
 
     def test_insert(self):
         self.cf.insert('hello')
-        self.assertEquals(self.cf.size, 1)
+        self.assertEqual(self.cf.size, 1)
 
     def test_contains(self):
         self.cf.insert('hello')
