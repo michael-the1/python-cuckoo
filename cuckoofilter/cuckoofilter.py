@@ -1,7 +1,7 @@
 import mmh3
 import random
 
-import bucket
+from . import bucket
 
 
 class CuckooFilter:
