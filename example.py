@@ -23,4 +23,4 @@ if __name__ == '__main__':
             false_queries = false_queries + 1
         total_queries = total_queries + 1
 
-    print('False positive rate is {}'.format(100.0 * false_queries / total_queries))
+    print('False positive rate is {}%'.format(100.0 * false_queries / total_queries))
