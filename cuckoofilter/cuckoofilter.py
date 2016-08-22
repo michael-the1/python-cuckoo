@@ -2,6 +2,8 @@ import bitstring
 import mmh3
 import random
 
+import bucket
+
 
 class CuckooFilter:
     '''
@@ -36,9 +38,8 @@ class CuckooFilter:
         '''
         self.capacity = capacity
         self.bits_per_fingerprint = bits_per_fingerprint
-        self.bucket_size = bucket_size
         self.max_kicks = max_kicks
-        self.buckets = [[] for _ in range(self.capacity)]
+        self.buckets = [bucket.Bucket(size=bucket_size) for _ in range(self.capacity)]
         self.size = 0
 
     def insert(self, item):
@@ -47,25 +48,20 @@ class CuckooFilter:
 
         Throws an exception if the insertion fails.
         '''
-        fingerprint = self.fingerprint(item, self.bits_per_fingerprint)
+        fingerprint = self.fingerprint(item)
         i1, i2 = self.calculate_index_pair(item)
 
-        if len(self.buckets[i1]) < self.bucket_size:
-            self.buckets[i1].append(fingerprint)
+        if self.buckets[i1].insert(fingerprint):
             return i1
-        elif len(self.buckets[i2]) < self.bucket_size:
-            self.buckets[i2].append(fingerprint)
+        elif self.buckets[i2].insert(fingerprint):
             return i2
 
         i = random.choice((i1, i2))
         for kick_count in range(self.max_kicks):
-            bucket = self.buckets[i]
-            bucket_index, new_fingerprint = random.choice(list(enumerate(bucket)))
-            bucket[bucket_index] = fingerprint
-            fingerprint = new_fingerprint
+            fingerprint = self.buckets[i].swap(fingerprint)
             i = (i ^ self.index_hash(fingerprint.tobytes())) % self.capacity
-            if len(self.buckets[i]) < self.bucket_size:
-                self.buckets[i].append(fingerprint)
+
+            if self.buckets[i].insert(fingerprint):
                 self.size = self.size + 1
                 return i
 
@@ -73,12 +69,9 @@ class CuckooFilter:
 
     def contains(self, item):
         '''Checks if a string was inserted into the filter.'''
-        fingerprint = self.fingerprint(item, self.bits_per_fingerprint)
+        fingerprint = self.fingerprint(item)
         i1, i2 = self.calculate_index_pair(item)
         return (fingerprint in self.buckets[i1]) or (fingerprint in self.buckets[i2])
-
-    def __contains__(self, item):
-        return self.contains(item)
 
     def delete(self, item):
         '''Removes a string from the filter.'''
@@ -88,16 +81,16 @@ class CuckooFilter:
         item_hash = mmh3.hash_bytes(item)
         index = int.from_bytes(item_hash, byteorder='big') % self.capacity
         return index
-    
-    def calculate_index_pair(self, item):
+
+    def calculate_index_pair(self, item, fingerprint=None):
         '''Calculate both possible indices for the item'''
-        fingerprint = self.fingerprint(item, self.bits_per_fingerprint)
+        if not fingerprint:
+            fingerprint = self.fingerprint(item)
         i1 = self.index_hash(item)
         i2 = (i1 ^ self.index_hash(fingerprint.tobytes())) % self.capacity
         return i1, i2
 
-    @staticmethod
-    def fingerprint(item, fingerprint_size):
+    def fingerprint(self, item):
         '''
         Takes a string and returns its fingerprint in bits.
 
@@ -106,5 +99,8 @@ class CuckooFilter:
         '''
         item_hash = mmh3.hash_bytes(item)
         bits = bitstring.Bits(item_hash)
-        bits = bits[:fingerprint_size]
+        bits = bits[:self.bits_per_fingerprint]
         return bits
+
+    def __contains__(self, item):
+        return self.contains(item)
