@@ -1,4 +1,3 @@
-import bitstring
 import mmh3
 import random
 
@@ -19,16 +18,14 @@ class CuckooFilter:
     Their reference implementation in C++ can be found here: https://github.com/efficient/cuckoofilter
     '''
 
-    def __init__(self, capacity, bits_per_fingerprint, bucket_size=4, max_kicks=500):
+    def __init__(self, capacity, fingerprint_size, bucket_size=4, max_kicks=500):
         '''
         Initialize Cuckoo filter parameters.
 
         capacity : size of the filter
             Defines how many buckets the filter contains.
-        bits_per_fingerprint : nr. of bits per fingerprint
-            Defines the size of the fingerprint.
+        fingerprint_size: size of the fingerprint in bytes
             A larger fingerprint size results in a lower FPP.
-            Using 6 bits results in over ~95% load factor, i.e., empirically it is found that the filter is filled over 95% before insertion failure occurs.
         bucket_size : nr. of entries a bucket can hold
             A bucket can hold multiple entries.
             Default size is 4, which closely approaches the best size for FPP between 0.00001 and 0.002 (see Fan et al.).
@@ -37,7 +34,7 @@ class CuckooFilter:
             Defaults to 500. This is an arbitrary number also used by Fan et al. and seems reasonable enough.
         '''
         self.capacity = capacity
-        self.bits_per_fingerprint = bits_per_fingerprint
+        self.fingerprint_size = fingerprint_size
         self.max_kicks = max_kicks
         self.buckets = [bucket.Bucket(size=bucket_size) for _ in range(self.capacity)]
         self.size = 0
@@ -61,7 +58,7 @@ class CuckooFilter:
         i = random.choice((i1, i2))
         for kick_count in range(self.max_kicks):
             fingerprint = self.buckets[i].swap(fingerprint)
-            i = (i ^ self.index_hash(fingerprint.tobytes())) % self.capacity
+            i = (i ^ self.index_hash(fingerprint)) % self.capacity
 
             if self.buckets[i].insert(fingerprint):
                 return i
@@ -93,7 +90,7 @@ class CuckooFilter:
         if not fingerprint:
             fingerprint = self.fingerprint(item)
         i1 = self.index_hash(item)
-        i2 = (i1 ^ self.index_hash(fingerprint.tobytes())) % self.capacity
+        i2 = (i1 ^ self.index_hash(fingerprint)) % self.capacity
         return i1, i2
 
     def fingerprint(self, item):
@@ -104,9 +101,7 @@ class CuckooFilter:
         To calculate this fingerprint, we hash the string with MurmurHash3 and truncate the hash.
         '''
         item_hash = mmh3.hash_bytes(item)
-        bits = bitstring.Bits(item_hash)
-        bits = bits[:self.bits_per_fingerprint]
-        return bits
+        return item_hash[:self.fingerprint_size]
 
     def load_factor(self):
         return self.size / (len(self.buckets) * self.bucket_size)
@@ -115,7 +110,7 @@ class CuckooFilter:
         return self.contains(item)
 
     def __repr__(self):
-        return '<CuckooFilter: capacity=' + str(self.capacity) + ', fingerprint size=' + str(self.bits_per_fingerprint) + ' bits>'
+        return '<CuckooFilter: capacity=' + str(self.capacity) + ', fingerprint size=' + str(self.fingerprint_size) + ' byte(s)>'
 
     def __sizeof__(self):
         return super().__sizeof__() + sum(b.__sizeof__() for b in self.buckets)
