@@ -85,10 +85,8 @@ class CuckooFilter:
         index = int.from_bytes(item_hash, byteorder='big') % self.capacity
         return index
 
-    def calculate_index_pair(self, item, fingerprint=None):
+    def calculate_index_pair(self, item, fingerprint):
         '''Calculate both possible indices for the item'''
-        if not fingerprint:
-            fingerprint = self.fingerprint(item)
         i1 = self.index_hash(item)
         i2 = (i1 ^ self.index_hash(fingerprint)) % self.capacity
         return i1, i2
