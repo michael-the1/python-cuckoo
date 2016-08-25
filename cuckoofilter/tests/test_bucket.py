@@ -10,7 +10,12 @@ def test_initialization(bucket):
     assert bucket.b == []
 
 def test_insert(bucket):
-    bucket.insert('hello')
+    assert bucket.insert('hello')
+
+def test_insert_full(bucket):
+    for i in range(bucket.size):
+        bucket.insert('a')
+    assert not bucket.insert('a')
 
 def test_contains(bucket):
     bucket.insert('hello')
@@ -18,8 +23,11 @@ def test_contains(bucket):
 
 def test_delete(bucket):
     bucket.insert('hello')
-    bucket.delete('hello')
+    assert bucket.delete('hello')
     assert not bucket.contains('hello')
+
+def test_delete_non_existing_fingerprint(bucket):
+    assert not bucket.delete('hello')
 
 def test_swap(bucket):
     bucket.insert('hello')
