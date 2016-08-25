@@ -104,7 +104,7 @@ class CuckooFilter:
         return item_hash[:self.fingerprint_size]
 
     def load_factor(self):
-        return self.size / (len(self.buckets) * self.bucket_size)
+        return self.size / (self.capacity * self.bucket_size)
 
     def __contains__(self, item):
         return self.contains(item)
