@@ -78,6 +78,8 @@ class CuckooFilter:
         i1, i2 = self.calculate_index_pair(item, fingerprint)
         if self.buckets[i1].delete(fingerprint) or self.buckets[i2].delete(fingerprint):
             self.size = self.size - 1
+            return True
+        return False
 
     def index_hash(self, item):
         '''Calculate the (first) index of an item in the filter.'''
