@@ -1,37 +1,33 @@
-import unittest
-import bucket
+import pytest
+import cuckoofilter
 
-class TestBucket(unittest.TestCase):
+@pytest.fixture
+def bucket():
+    return cuckoofilter.Bucket()
 
-    def setUp(self):
-        self.b = bucket.Bucket()
+def test_initialization(bucket):
+    assert bucket.size == 4
+    assert bucket.b == []
 
-    def test_initialization(self):
-        self.assertEqual(self.b.size, 4)
-        self.assertEqual(self.b.b, [])
+def test_insert(bucket):
+    bucket.insert('hello')
 
-    def test_insert(self):
-        self.b.insert('hello')
+def test_contains(bucket):
+    bucket.insert('hello')
+    assert bucket.contains('hello')
 
-    def test_contains(self):
-        self.b.insert('hello')
-        self.assertTrue(self.b.contains('hello'))
+def test_delete(bucket):
+    bucket.insert('hello')
+    bucket.delete('hello')
+    assert not bucket.contains('hello')
 
-    def test_delete(self):
-        self.b.insert('hello')
-        self.b.delete('hello')
-        self.assertFalse(self.b.contains('hello'))
+def test_swap(bucket):
+    bucket.insert('hello')
+    swapped_fingerprint = bucket.swap('world')
+    assert swapped_fingerprint == 'hello'
+    assert bucket.contains('world')
 
-    def test_swap(self):
-        self.b.insert('hello')
-        swapped_fingerprint = self.b.swap('world')
-        self.assertEqual(swapped_fingerprint, 'hello')
-        self.assertTrue(self.b.contains('world'))
-
-    def test_is_full(self):
-        for i in range(4):
-            self.b.insert(i)
-        self.assertTrue(self.b.is_full())
-
-if __name__ == '__main__':
-    unittest.main()
+def test_is_full(bucket):
+    for i in range(4):
+        bucket.insert(i)
+    assert bucket.is_full()

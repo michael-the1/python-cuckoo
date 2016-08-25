@@ -1,25 +1,20 @@
-import unittest
+import pytest
 import cuckoofilter
 
-class TestCuckooFilter(unittest.TestCase):
+@pytest.fixture
+def cf():
+    return cuckoofilter.CuckooFilter(100000, 4)
 
-    def setUp(self):
-        self.cf = cuckoofilter.CuckooFilter(100000, 4)
+def test_insert(cf):
+    cf.insert('hello')
+    assert cf.size == 1
 
-    def test_insert(self):
-        self.cf.insert('hello')
-        self.assertEqual(self.cf.size, 1)
+def test_contains(cf):
+    cf.insert('hello')
+    assert cf.contains('hello'), 'Key was not inserted'
 
-    def test_contains(self):
-        self.cf.insert('hello')
-        self.assertTrue(self.cf.contains('hello'), 'Key was not inserted')
-
-    def test_delete(self):
-        self.cf.insert('hello')
-        self.cf.delete('hello')
-        self.assertFalse(self.cf.contains('hello'), 'Inserted key was not deleted.')
-        self.assertEqual(self.cf.size, 0, 'Size was not properly kept track of')
-
-
-if __name__ == '__main__':
-    unittest.main()
+def test_delete(cf):
+    cf.insert('hello')
+    cf.delete('hello')
+    assert not cf.contains('hello'), 'Inserted key was not deleted.'
+    assert cf.size == 0, 'Size was not properly kept track of'
