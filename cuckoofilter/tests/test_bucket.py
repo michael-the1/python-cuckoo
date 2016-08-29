@@ -1,9 +1,9 @@
 import pytest
-import cuckoofilter
+from cuckoofilter import bucket as b
 
 @pytest.fixture
 def bucket():
-    return cuckoofilter.Bucket()
+    return b.Bucket()
 
 def test_initialization(bucket):
     assert bucket.size == 4
