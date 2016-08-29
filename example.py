@@ -5,7 +5,7 @@ Example usage. Modeled after https://github.com/efficient/cuckoofilter/blob/mast
 import cuckoofilter
 
 if __name__ == '__main__':
-    total_items = 1000000
+    total_items = 100000
     cf = cuckoofilter.CuckooFilter(total_items, 2)
     
     num_inserted = 0
