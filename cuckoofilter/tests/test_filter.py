@@ -34,6 +34,10 @@ def test_insert_over_capacitiy(cf):
     assert str(e.value) == 'Filter is full'
     assert cf.load_factor() > 0.9
 
+def test_insert_unicode_character(cf):
+    assert cf.insert('你好')
+    assert cf.size == 1
+
 def test_contains(cf):
     cf.insert('hello')
     assert cf.contains('hello'), 'Key was not inserted'
@@ -41,6 +45,10 @@ def test_contains(cf):
 def test_contains_builtin(cf):
     cf.insert('hello')
     assert 'hello' in cf
+
+def test_contains_unicode_character(cf):
+    cf.insert('你好')
+    assert '你好' in cf
 
 def test_delete(cf):
     cf.insert('hello')
@@ -57,6 +65,12 @@ def test_delete_second_bucket(cf):
 
 def test_delete_non_existing(cf):
     assert not cf.delete('hello')
+
+def test_delete_unicode_character(cf):
+    cf.insert('你好')
+    assert cf.delete('你好')
+    assert '你好' not in cf
+    assert cf.size == 0
 
 def test_load_factor_empty(cf):
     assert cf.load_factor() == 0
