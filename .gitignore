@@ -1,5 +1,12 @@
-*.pyc
+__pycache__
+*.py[co]
 *env/
 .cache/
 .coverage
 htmlcov/
+/*.egg-info
+/build
+/dist
+/.eggs
+monkeytype.sqlite3
+/.ipynb_checkpoints
